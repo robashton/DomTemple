@@ -77,6 +77,14 @@ namespace DomTemple.Tests {
         .Input( new { Title = "Hello world"})
         .Expect("<html><head><title>Hello world</title></head><body><h1 id=\"title\">Hello world</h1></body></html>");
     }
+
+    [Test]
+    public void Can_replace_title_by_class_by_convention() {
+      new ParseTest()
+        .Html("<html><h1 class=\"title\"></h1></html>")
+        .Input(new { Title = "Hello world" })
+        .Expect("<html><h1>Hello world</h1></html>");
+    }
   }
 
   public class ParseTest {
