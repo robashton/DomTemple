@@ -14,11 +14,17 @@ namespace DomTemple {
             BindingFlags.Public | BindingFlags.Instance)) {
 
         var xpath = string.Format("//{0}", property.Name.ToLower());
+        var value = (string)property.GetValue(model, null);
         var node = document.DocumentNode.SelectSingleNode(xpath);
         if(node != null) {
-          var value = (string)property.GetValue(model, null);
           node.InnerHtml = value;
         }
+
+        xpath = string.Format("id('{0}')", property.Name.ToLower());
+        var nodes = document.DocumentNode.SelectNodes(xpath);
+        if(nodes != null)
+          foreach(var needle in nodes)
+            needle.InnerHtml = value;
       }
 
       return document.DocumentNode.WriteTo();
@@ -38,7 +44,7 @@ namespace DomTemple.Tests {
     }
 
     [Test]
-    public void Can_replace_title_by_convention() {
+    public void Can_replace_title_element_by_convention() {
       var html = Parser.Process(
           "<html><head><title>Placeholder</title></head></html>",
           new { Title =  "My Page" });
@@ -47,13 +53,44 @@ namespace DomTemple.Tests {
     }
    
     [Test]
-    public void Can_replace_body_by_convention() {
+    public void Can_replace_body_element_by_convention() {
       var html = Parser.Process(
           "<html><body></body></html>",
           new { Body = "<h1>Heaven is a place on earth</h1>" });
 
       Assert.That(html.IndexOf("<body><h1>Heaven is a place on earth</h1></body>") >= 0);
+    }
 
+    [Test]
+    public void Can_replace_title_by_id_by_convention() {
+      new ParseTest()
+          .Html("<html><body><h1 id=\"title\"></h1></body></html>")
+          .Input( new { Title = "Hello world" })
+          .Expect("<html><body><h1 id=\"title\">Hello world</h1></body></html>");
+    }
+  }
+
+  public class ParseTest {
+    string html;
+    object input;
+
+    public ParseTest() {
+
+    }
+
+    public ParseTest Html(string html) {
+      this.html = html;
+      return this;
+    }
+    
+    public ParseTest Input(object input) {
+      this.input = input;
+      return this;
+    }
+
+    public void Expect(string expected) {
+      var html = Parser.Process(this.html, this.input);
+      Assert.That(html, Is.EqualTo(expected));
     }
   }
 }
