@@ -1,5 +1,5 @@
-.swp
-.pidb
-.userprefs
+*.swp
+*.pidb
+*.userprefs
 bin
 obj
