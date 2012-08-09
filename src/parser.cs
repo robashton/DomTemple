@@ -25,6 +25,8 @@ namespace DomTemple {
     }
 
     private static void ProcessNode(HtmlNode node, Object model) {
+      if(model == null) return;
+
       foreach(var property in model.GetType().GetProperties(
             BindingFlags.Public | BindingFlags.Instance)) {
 
@@ -277,14 +279,29 @@ namespace DomTemple.Tests {
       new ParseTest()
         .Html("<ul id=\"artists\"><li></li></ul>")
         .Input(new TestViewModel {
-          Artists = new [] {} 
+          Artists = new Artist [] {} 
         })
         .Expect("<ul id=\"artists\"></ul>");
+    }
+    
+    [Test]
+    public void Can_safely_ignore_empty_custom_object_properties() {
+      new ParseTest()
+        .Html("<ul id=\"country\"><li class=\"name\"></li></ul>")
+        .Input(new TestViewModel {
+          Country = null
+        })
+        .Expect("<ul id=\"country\"><li class=\"name\"></li></ul>");
     }
   }
 
   public class TestViewModel {
+    public Country Country { get; set; }
     public Artist[] Artists { get; set; }
+  }
+
+  public class Country {
+    public string Code { get; set; }
   }
 
   public class Artist { 
