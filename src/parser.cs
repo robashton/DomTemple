@@ -29,8 +29,10 @@ namespace DomTemple {
 
         var value = property.GetValue(model, null);
 
-        if(IsBindable(property)) 
+        if(IsBindable(property.PropertyType)) 
           BindStringToNode(node, property.Name, value.ToString());
+        else if(IsArray(property.PropertyType))
+          BindArrayToNode(node, property.Name, (object[])value);
         else {
           foreach(var target in FindMatchingNodes(node, property.Name))
             ProcessNode(target, value);
@@ -38,9 +40,33 @@ namespace DomTemple {
       }
     }
 
-    private static bool IsBindable(PropertyInfo property) {
-      return property.PropertyType.IsPrimitive
-        ||   property.PropertyType == typeof(string);
+    private static bool IsBindable(Type type) {
+      return type.IsPrimitive
+        ||   type == typeof(string);
+    }
+
+    private static bool IsArray(Type type) {
+      return type.IsArray;
+    }
+
+    private static void BindArrayToNode(HtmlNode node, string name, object[] items) {
+      foreach(var container in FindMatchingNodes(node, name)) {
+        var template = container.ChildNodes[0]; 
+        var children = new HtmlNodeCollection(null);
+        for(var x = 0; x < items.Length; x++) {
+          var item = items[x];
+          var target = template.Clone();
+          var type = item.GetType();
+
+          if(IsBindable(type))
+            target.InnerHtml = item.ToString();
+          else 
+            ProcessNode(target, item);
+          children.Add(target);
+        }
+        template.Remove();
+        container.AppendChildren(children);
+      }
     }
 
     private static IEnumerable<HtmlNode> FindMatchingNodes(HtmlNode root, string name) {
@@ -170,6 +196,53 @@ namespace DomTemple.Tests {
           }
         })
         .Expect("<h1 class=\"title\">Artist</h1><div id=\"artist\"><p class=\"name\">Prince</p></div>");
+    }
+
+    [Test]
+    public void Can_perform_templating_on_primitive_array_properties() {
+      new ParseTest()
+        .Html("<ul id=\"artists\"><li></li></ul>")
+        .Input(new {
+          Artists = new [] { "bob", "alice", "james" } 
+        })
+        .Expect("<ul id=\"artists\"><li>bob</li><li>alice</li><li>james</li></ul>");
+    }
+
+
+    [Test]
+    public void Can_perform_templating_on_object_array_properties() {
+      new ParseTest()
+        .Html("<ul id=\"artists\"><li><p class=\"name\"></p></li></ul>")
+        .Input(new {
+           Artists = new [] {
+             new { Name = "bob" },
+             new { Name = "alice" }
+           }
+         })
+        .Expect("<ul id=\"artists\"><li><p class=\"name\">bob</p></li><li><p class=\"name\">alice</p></li></ul>");
+    }
+
+    [Test]
+    public void Can_use_an_explicit_template_for_primitive_array_properties() {
+      new ParseTest()
+        .Html("<ul id=\"artists\"><li class=\"header\"></li><li class=\"template\"></li></ul>")
+        .Input(new {
+          Artists = new [] { "bob", "alice", "james" } 
+        })
+        .Expect("<ul id=\"artists\"><li class=\"header\"></li><li>bob</li><li>alice</li><li>james</li></ul>");
+    }
+
+    [Test]
+    public void Can_use_an_explicit_template_for_object_array_properties() {
+      new ParseTest()
+        .Html("<ul id=\"artists\"><li class=\"header\"></li><li class=\"template\"><p class=\"name\"></p></li></ul>")
+        .Input(new {
+           Artists = new [] {
+             new { Name = "bob" },
+             new { Name = "alice" }
+           }
+         })
+        .Expect("<ul id=\"artists\"><li class=\"header\"></li><li><p class=\"name\">bob</p></li><li><p class=\"name\">alice</p></li></ul>");
     }
   }
 
