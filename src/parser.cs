@@ -58,6 +58,8 @@ namespace DomTemple {
         ClearTemplateClassFrom(template);
         template.Remove();
 
+        if(items == null || items.Length == 0) continue;
+
         for(var x = 0; x < items.Length; x++) {
           var item = items[x];
           var target = template.CloneNode(true);
@@ -223,7 +225,6 @@ namespace DomTemple.Tests {
         .Expect("<ul id=\"artists\"><li>bob</li><li>alice</li><li>james</li></ul>");
     }
 
-
     [Test]
     public void Can_perform_templating_on_object_array_properties() {
       new ParseTest()
@@ -259,6 +260,25 @@ namespace DomTemple.Tests {
          })
         .Expect("<ul id=\"artists\"><li class=\"header\"></li><li><p class=\"name\">bob</p></li><li><p class=\"name\">alice</p></li></ul>");
     }
+
+
+    [Test]
+    public void Can_safely_ignore_null_property_values() {
+      new ParseTest()
+        .Html("<ul id=\"artists\"><li></li></ul>")
+        .Input(new TestViewModel {
+          Artists = null
+        })
+        .Expect("<ul id=\"artists\"></ul>");
+    }
+  }
+
+  public class TestViewModel {
+    public Artist[] Artists { get; set; }
+  }
+
+  public class Artist { 
+    public string Name { get; set; }
   }
 
   public class ParseTest {
