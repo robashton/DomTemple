@@ -263,11 +263,21 @@ namespace DomTemple.Tests {
 
 
     [Test]
-    public void Can_safely_ignore_null_property_values() {
+    public void Can_safely_ignore_null_array_property_values() {
       new ParseTest()
         .Html("<ul id=\"artists\"><li></li></ul>")
         .Input(new TestViewModel {
           Artists = null
+        })
+        .Expect("<ul id=\"artists\"></ul>");
+
+    }
+    [Test]
+    public void Can_safely_ignore_empty_array_property_values() {
+      new ParseTest()
+        .Html("<ul id=\"artists\"><li></li></ul>")
+        .Input(new TestViewModel {
+          Artists = new [] {} 
         })
         .Expect("<ul id=\"artists\"></ul>");
     }
