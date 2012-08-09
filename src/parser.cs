@@ -40,6 +40,7 @@ namespace DomTemple {
 
 
 namespace DomTemple.Tests {
+
   [TestFixture]
   public class BasicFunctionality {
 
@@ -90,6 +91,14 @@ namespace DomTemple.Tests {
         .Html("<html><h1 class=\"title\"></h1></html>")
         .Input(new { Title = "Hello world" })
         .Expect("<html><h1 class=\"title\">Hello world</h1></html>");
+    }
+
+    [Test]
+    public void Matching_by_id_means_not_matching_by_class() {
+      new ParseTest()
+        .Html("<html><head><title></title></head><body><h1 class=\"title\"></h1></body></html>")
+        .Input(new { Title = "God save the queen" })
+        .Expect("<html><head><title>God save the queen</title></head><body><h1 class=\"title\"></h1></body></html>");
     }
   }
 
