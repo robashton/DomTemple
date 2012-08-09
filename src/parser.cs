@@ -52,27 +52,24 @@ namespace DomTemple {
 
     private static void BindArrayToNode(HtmlNode node, string name, object[] items) {
       foreach(var container in FindMatchingNodes(node, name)) {
-        var template = container.SelectSingleNode("//*[@class='template']")  
+        var template = container.SelectSingleNode("./*[@class='template']")  
           ?? container.ChildNodes[0]; 
 
+        ClearTemplateClassFrom(template);
         template.Remove();
 
-        ClearTemplateClassFrom(template);
-
-        var children = new HtmlNodeCollection(null);
         for(var x = 0; x < items.Length; x++) {
           var item = items[x];
           var target = template.CloneNode(true);
+          container.ChildNodes.Append(target);
+
           var type = item.GetType();
 
           if(IsBindable(type))
             target.InnerHtml = (string)item;
           else 
             ProcessNode(target, item);
-
-          children.Add(target);
         }
-        container.AppendChildren(children);
       }
     }
 
@@ -88,7 +85,7 @@ namespace DomTemple {
 
     private static IEnumerable<HtmlNode> FindMatchingNodes(HtmlNode root, string name) {
       var found = false;
-      var xpath = string.Format("//{0}", name.ToLower());
+      var xpath = string.Format(".//{0}", name.ToLower());
       
       var node = root.SelectSingleNode(xpath);
       if(node != null) {
@@ -106,7 +103,7 @@ namespace DomTemple {
 
       if(found) yield break;
 
-      xpath = string.Format("//*[@class='{0}']", name.ToLower());
+      xpath = string.Format(".//*[@class='{0}']", name.ToLower());
       nodes = root.SelectNodes(xpath);
       if(nodes != null)
         foreach(var target in nodes)
@@ -115,7 +112,6 @@ namespace DomTemple {
 
     private static void BindStringToNode(HtmlNode root, string name, string value) {
       foreach(var target in FindMatchingNodes(root, name)) { 
-        Console.WriteLine("{0} {1} {2}", root.OuterHtml, name, value);
         target.InnerHtml = value;
       }
     }
