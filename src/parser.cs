@@ -1,10 +1,19 @@
 using System;
+using System.Text;
 using HtmlAgilityPack;
 using System.Reflection;
 using NUnit.Framework;
 
 namespace DomTemple {
   public class Parser {
+
+    public static string Process(string input, object[] models) {
+      var builder = new StringBuilder();
+      for(var x = 0; x < models.Length; x++)
+        builder.Append(Parser.Process(input, models[x]));
+      return builder.ToString();
+    }
+
     public static string Process(string input, object model) {
       var document = new HtmlDocument();
       document.LoadHtml(input);
@@ -115,11 +124,24 @@ namespace DomTemple.Tests {
         .Input(new { Name = "bob" })
         .Expect("<p class=\"name\">bob</p>");
     }
+
+
+    [Test]
+    public void Can_repeat_over_array_of_items() {
+      new ParseTest()
+        .Html("<p class=\"name\"></p>")
+        .Input(new Object [] { 
+           new { Name = "bob" },
+           new { Name = "alice" }
+         })
+        .Expect("<p class=\"name\">bob</p><p class=\"name\">alice</p>");
+    }
   }
 
   public class ParseTest {
     string html;
     object input;
+    object[] inputs;
 
     public ParseTest() {
 
@@ -135,8 +157,17 @@ namespace DomTemple.Tests {
       return this;
     }
 
+    public ParseTest Input(object[] inputs) {
+      this.inputs = inputs;
+      return this;
+    }
+
     public void Expect(string expected) {
-      var html = Parser.Process(this.html, this.input);
+      string html = string.Empty;
+      if(this.inputs != null)
+        html = Parser.Process(this.html, this.inputs);
+      else
+        html = Parser.Process(this.html, this.input);
       Assert.That(html, Is.EqualTo(expected));
     }
   }
