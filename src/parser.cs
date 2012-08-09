@@ -19,19 +19,23 @@ namespace DomTemple {
     public static string Process(string input, object model) {
       var document = new HtmlDocument();
       document.LoadHtml(input);
+      ProcessNode(document.DocumentNode, model);
+      return document.DocumentNode.WriteTo();
+    }
 
+    private static void ProcessNode(HtmlNode node, Object model) {
       foreach(var property in model.GetType().GetProperties(
             BindingFlags.Public | BindingFlags.Instance)) {
+
         var value = property.GetValue(model, null);
 
         if(IsBindable(property)) 
-          BindStringToNode(document.DocumentNode, property.Name, value.ToString());
+          BindStringToNode(node, property.Name, value.ToString());
         else {
-
+          foreach(var target in FindMatchingNodes(node, property.Name))
+            ProcessNode(target, value);
         }
       }
-
-      return document.DocumentNode.WriteTo();
     }
 
     private static bool IsBindable(PropertyInfo property) {
