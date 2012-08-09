@@ -25,6 +25,12 @@ namespace DomTemple {
         if(nodes != null)
           foreach(var needle in nodes)
             needle.InnerHtml = value;
+
+        xpath = string.Format("//*[@class='{0}']", property.Name.ToLower());
+        nodes = document.DocumentNode.SelectNodes(xpath);
+        if(nodes != null)
+          foreach(var needle in nodes)
+            needle.InnerHtml = value;
       }
 
       return document.DocumentNode.WriteTo();
@@ -83,7 +89,7 @@ namespace DomTemple.Tests {
       new ParseTest()
         .Html("<html><h1 class=\"title\"></h1></html>")
         .Input(new { Title = "Hello world" })
-        .Expect("<html><h1>Hello world</h1></html>");
+        .Expect("<html><h1 class=\"title\">Hello world</h1></html>");
     }
   }
 
