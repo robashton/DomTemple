@@ -1,4 +1,6 @@
 using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.Text;
 using HtmlAgilityPack;
 using System.Reflection;
@@ -18,37 +20,55 @@ namespace DomTemple {
       var document = new HtmlDocument();
       document.LoadHtml(input);
 
-      var found = false;
-
       foreach(var property in model.GetType().GetProperties(
             BindingFlags.Public | BindingFlags.Instance)) {
+        var value = property.GetValue(model, null);
 
-        var xpath = string.Format("//{0}", property.Name.ToLower());
-        var value = (string)property.GetValue(model, null);
-        var node = document.DocumentNode.SelectSingleNode(xpath);
-        if(node != null) {
-          node.InnerHtml = value;
-          found = true;
+        if(IsBindable(property)) 
+          BindStringToNode(document.DocumentNode, property.Name, value.ToString());
+        else {
+
         }
-
-        xpath = string.Format("id('{0}')", property.Name.ToLower());
-        var nodes = document.DocumentNode.SelectNodes(xpath);
-        if(nodes != null) {
-          foreach(var target in nodes)
-            target.InnerHtml = value;
-          found = true;
-        }
-
-        if(found) continue;
-
-        xpath = string.Format("//*[@class='{0}']", property.Name.ToLower());
-        nodes = document.DocumentNode.SelectNodes(xpath);
-        if(nodes != null)
-          foreach(var target in nodes)
-            target.InnerHtml = value;
       }
 
       return document.DocumentNode.WriteTo();
+    }
+
+    private static bool IsBindable(PropertyInfo property) {
+      return property.PropertyType.IsPrimitive
+        ||   property.PropertyType == typeof(string);
+    }
+
+    private static IEnumerable<HtmlNode> FindMatchingNodes(HtmlNode root, string name) {
+      var found = false;
+      var xpath = string.Format("//{0}", name.ToLower());
+
+      var node = root.SelectSingleNode(xpath);
+      if(node != null) {
+        yield return node;
+        found = true;
+      }
+
+      xpath = string.Format("id('{0}')", name.ToLower());
+      var nodes = root.SelectNodes(xpath);
+      if(nodes != null) {
+        foreach(var target in nodes)
+          yield return target;
+        found = true;
+      }
+
+      if(found) yield break;
+
+      xpath = string.Format("//*[@class='{0}']", name.ToLower());
+      nodes = root.SelectNodes(xpath);
+      if(nodes != null)
+        foreach(var target in nodes)
+          yield return target;
+    }
+
+    private static void BindStringToNode(HtmlNode root, string name, string value) {
+      foreach(var target in FindMatchingNodes(root, name)) 
+        target.InnerHtml = value;
     }
   }
 }
