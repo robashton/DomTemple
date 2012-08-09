@@ -106,6 +106,15 @@ namespace DomTemple.Tests {
         .Input(new { Title = "God save the queen" })
         .Expect("<html><head><title>God save the queen</title></head><body><h1 class=\"title\"></h1></body></html>");
     }
+
+
+    [Test]
+    public void Can_replace_items_within_a_fragment() {
+      new ParseTest()
+        .Html("<p class=\"name\"></p>")
+        .Input(new { Name = "bob" })
+        .Expect("<p class=\"name\">bob</p>");
+    }
   }
 
   public class ParseTest {
