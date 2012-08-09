@@ -9,6 +9,7 @@ namespace DomTemple {
       var document = new HtmlDocument();
       document.LoadHtml(input);
 
+      var found = false;
 
       foreach(var property in model.GetType().GetProperties(
             BindingFlags.Public | BindingFlags.Instance)) {
@@ -18,13 +19,18 @@ namespace DomTemple {
         var node = document.DocumentNode.SelectSingleNode(xpath);
         if(node != null) {
           node.InnerHtml = value;
+          found = true;
         }
 
         xpath = string.Format("id('{0}')", property.Name.ToLower());
         var nodes = document.DocumentNode.SelectNodes(xpath);
-        if(nodes != null)
+        if(nodes != null) {
           foreach(var needle in nodes)
             needle.InnerHtml = value;
+          found = true;
+        }
+
+        if(found) continue;
 
         xpath = string.Format("//*[@class='{0}']", property.Name.ToLower());
         nodes = document.DocumentNode.SelectNodes(xpath);
