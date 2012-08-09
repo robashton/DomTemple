@@ -91,7 +91,6 @@ namespace DomTemple.Tests {
           .Expect("<html><body><h1 id=\"title\">Hello world</h1></body></html>");
     }
 
-
     [Test]
     public void Can_replace_title_by_id_and_body_by_convention() {
       new ParseTest()
@@ -125,7 +124,6 @@ namespace DomTemple.Tests {
         .Expect("<p class=\"name\">bob</p>");
     }
 
-
     [Test]
     public void Can_repeat_over_array_of_items() {
       new ParseTest()
@@ -135,6 +133,19 @@ namespace DomTemple.Tests {
            new { Name = "alice" }
          })
         .Expect("<p class=\"name\">bob</p><p class=\"name\">alice</p>");
+    }
+
+    [Test]
+    public void Can_perform_templating_on_sub_objects() {
+      new ParseTest()
+        .Html("<h1 class=\"title\"></h1><div id=\"artist\"><p class=\"name\"></p></div>")
+        .Input(new { 
+          Title = "Artist",
+          Artist = new { 
+            Name = "Prince"
+          }
+        })
+        .Expect("<h1 class=\"title\">Artist</h1><div id=\"artist\"><p class=\"name\">Prince</p></div>");
     }
   }
 
