@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Collections;
 using System.Collections.Generic;
 using System.Text;
@@ -51,28 +52,44 @@ namespace DomTemple {
 
     private static void BindArrayToNode(HtmlNode node, string name, object[] items) {
       foreach(var container in FindMatchingNodes(node, name)) {
-        var template = container.ChildNodes[0]; 
+        var template = container.SelectSingleNode("//*[@class='template']")  
+          ?? container.ChildNodes[0]; 
+
+        template.Remove();
+
+        ClearTemplateClassFrom(template);
+
         var children = new HtmlNodeCollection(null);
         for(var x = 0; x < items.Length; x++) {
           var item = items[x];
-          var target = template.Clone();
+          var target = template.CloneNode(true);
           var type = item.GetType();
 
           if(IsBindable(type))
-            target.InnerHtml = item.ToString();
+            target.InnerHtml = (string)item;
           else 
             ProcessNode(target, item);
+
           children.Add(target);
         }
-        template.Remove();
         container.AppendChildren(children);
       }
+    }
+
+    private static void ClearTemplateClassFrom(HtmlNode node) {
+      var templateClass = node.Attributes.AttributesWithName("class").FirstOrDefault();
+      if(templateClass == null) return;
+
+
+      templateClass.Value = templateClass.Value.Replace("template", "").Trim();
+      if(templateClass.Value == string.Empty)
+        node.Attributes.Remove(templateClass);
     }
 
     private static IEnumerable<HtmlNode> FindMatchingNodes(HtmlNode root, string name) {
       var found = false;
       var xpath = string.Format("//{0}", name.ToLower());
-
+      
       var node = root.SelectSingleNode(xpath);
       if(node != null) {
         yield return node;
@@ -97,8 +114,10 @@ namespace DomTemple {
     }
 
     private static void BindStringToNode(HtmlNode root, string name, string value) {
-      foreach(var target in FindMatchingNodes(root, name)) 
+      foreach(var target in FindMatchingNodes(root, name)) { 
+        Console.WriteLine("{0} {1} {2}", root.OuterHtml, name, value);
         target.InnerHtml = value;
+      }
     }
   }
 }
