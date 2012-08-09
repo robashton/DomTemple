@@ -25,8 +25,8 @@ namespace DomTemple {
         xpath = string.Format("id('{0}')", property.Name.ToLower());
         var nodes = document.DocumentNode.SelectNodes(xpath);
         if(nodes != null) {
-          foreach(var needle in nodes)
-            needle.InnerHtml = value;
+          foreach(var target in nodes)
+            target.InnerHtml = value;
           found = true;
         }
 
@@ -35,8 +35,8 @@ namespace DomTemple {
         xpath = string.Format("//*[@class='{0}']", property.Name.ToLower());
         nodes = document.DocumentNode.SelectNodes(xpath);
         if(nodes != null)
-          foreach(var needle in nodes)
-            needle.InnerHtml = value;
+          foreach(var target in nodes)
+            target.InnerHtml = value;
       }
 
       return document.DocumentNode.WriteTo();
