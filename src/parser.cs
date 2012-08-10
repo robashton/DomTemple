@@ -8,6 +8,38 @@ using System.Reflection;
 using NUnit.Framework;
 
 namespace DomTemple {
+
+  public class ParsingScope
+  {
+    Stack<HtmlNode> nodes = new Stack<HtmlNode>();
+    Stack<object> models = new Stack<object>(); 
+
+    public ParsingScope(HtmlNode root, object model) {
+      nodes.Push(root);
+      models.Push(model);
+    }
+
+    public ParsingScope Push(HtmlNode node, object model) {
+      nodes.Push(node);
+      models.Push(model);
+      return this;
+    }
+
+    public ParsingScope Pop() {
+      nodes.Pop();
+      models.Pop();
+      return this;
+    }
+
+    public HtmlNode Node {
+       get { return this.nodes.Peek(); }
+    }
+
+    public object Model {
+       get { return this.models.Peek(); }
+    }
+  }
+
   public class Parser {
 
     public static string Process(string input, object[] models) {
@@ -20,27 +52,31 @@ namespace DomTemple {
     public static string Process(string input, object model) {
       var document = new HtmlDocument();
       document.LoadHtml(input);
-      ProcessNode(document.DocumentNode, model);
+
+      var scope = new ParsingScope(document.DocumentNode, model);
+      ProcessNode(scope);
+
       return document.DocumentNode.WriteTo();
     }
 
-    private static void ProcessNode(HtmlNode node, Object model) {
-      if(model == null) return;
+    private static void ProcessNode(ParsingScope scope) {
+      if(scope.Model == null) return;
 
-      foreach(var property in model.GetType().GetProperties(
+      foreach(var property in scope.Model.GetType().GetProperties(
             BindingFlags.Public | BindingFlags.Instance)) {
 
-        var value = property.GetValue(model, null);
+        var value = property.GetValue(scope.Model, null);
 
         if(IsBindable(property.PropertyType)) 
-          BindStringToNode(node, property.Name, value.ToString());
+          BindStringToNode(scope.Node, property.Name, value.ToString());
         else if(IsArray(property.PropertyType))
-          BindArrayToNode(node, property.Name, (object[])value);
+          BindArrayToNode(scope, property.Name, (object[])value);
         else {
-          foreach(var target in FindMatchingNodes(node, property.Name))
-            ProcessNode(target, value);
+          foreach(var target in FindMatchingNodes(scope.Node, property.Name))
+            ProcessNode(scope.Push(target, value));
         }
       }
+      scope.Pop();
     }
 
     private static bool IsBindable(Type type) {
@@ -52,8 +88,8 @@ namespace DomTemple {
       return type.IsArray;
     }
 
-    private static void BindArrayToNode(HtmlNode node, string name, object[] items) {
-      foreach(var container in FindMatchingNodes(node, name)) {
+    private static void BindArrayToNode(ParsingScope scope, string name, object[] items) {
+      foreach(var container in FindMatchingNodes(scope.Node, name)) {
         var template = container.SelectSingleNode("./*[@class='template']")  
           ?? container.ChildNodes[0]; 
 
@@ -72,7 +108,7 @@ namespace DomTemple {
           if(IsBindable(type))
             target.InnerHtml = (string)item;
           else 
-            ProcessNode(target, item);
+            ProcessNode(scope.Push(target, item));
         }
       }
     }
